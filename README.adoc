@@ -1,0 +1,38 @@
+= image:moonbreaker.svg[moonbreaker,width=50%]
+:imagesdir: docs/images
+
+Lua implementation of the https://martinfowler.com/bliki/CircuitBreaker.html[Circuit Breaker] pattern.
+
+== Installation
+
+----------------------------
+luarocks install moonbreaker
+----------------------------
+
+== Usage
+
+[source,lua]
+-----------------------------------------
+local moonbreaker = require "moonbreaker"
+
+-- Create Circuit Breaker instance with default settings.
+local breaker = moonbreaker.new()
+
+-- We have some error-prone service function...
+local function service(threshold)
+    if math.random() > threshold then
+        return nil, "error"
+    end
+    return true
+end
+
+-- ...and we can decorate it with our breaker instance.
+service = breaker(service)
+
+-- Now we're ready to call it!
+local ok, err = service(0.5)
+-----------------------------------------
+
+== Copyright
+
+Copyright © 2020 https://khashaev.ru[Arthur Khashaev]. See link:LICENSE.txt[license] for details.
