@@ -1,0 +1,6 @@
+# LuaCov
+luacov.*.out
+coverage
+
+# LuaRocks
+*.rock

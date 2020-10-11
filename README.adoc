@@ -29,9 +29,11 @@ end
 -- ...and we can decorate it with our breaker instance.
 service = breaker(service)
 
--- Now we're ready to call it!
+-- Now we’re ready to call it!
 local ok, err = service(0.5)
 -----------------------------------------
+
+See link:spec/moonbreaker_spec.lua[`spec/moonbreaker_spec.lua`] for details.
 
 == Copyright
 
