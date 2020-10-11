@@ -1,5 +1,15 @@
 = image:moonbreaker.svg[moonbreaker,width=50%]
 :imagesdir: docs/images
+:build-status-uri: https://travis-ci.com/Invizory/moonbreaker
+:build-status-image: https://api.travis-ci.com/Invizory/moonbreaker.svg?branch=master
+:coverage-uri: https://codecov.io/gh/Invizory/moonbreaker
+:coverage-image: https://codecov.io/gh/Invizory/moonbreaker/branch/master/graph/badge.svg
+:license-uri: LICENSE.txt
+:license-image: https://img.shields.io/badge/license-MIT-green.svg
+
+image:{build-status-image}[Build status,link={build-status-uri}]
+image:{coverage-image}[Coverage,link={coverage-uri}]
+image:{license-image}[MIT License,link={license-uri}]
 
 Lua implementation of the https://martinfowler.com/bliki/CircuitBreaker.html[Circuit Breaker] pattern.
 
@@ -37,4 +47,4 @@ See link:spec/moonbreaker_spec.lua[`spec/moonbreaker_spec.lua`] for details.
 
 == Copyright
 
-Copyright © 2020 https://khashaev.ru[Arthur Khashaev]. See link:LICENSE.txt[license] for details.
+Copyright © 2020 https://khashaev.ru[Arthur Khashaev]. See link:{license-uri}[license] for details.
