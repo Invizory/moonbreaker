@@ -4,11 +4,14 @@
 :build-status-image: https://api.travis-ci.com/Invizory/moonbreaker.svg?branch=master
 :coverage-uri: https://codecov.io/gh/Invizory/moonbreaker
 :coverage-image: https://codecov.io/gh/Invizory/moonbreaker/branch/master/graph/badge.svg
+:luarocks-uri: https://luarocks.org/modules/Invizory/moonbreaker
+:luarocks-image: https://img.shields.io/luarocks/v/Invizory/moonbreaker
 :license-uri: LICENSE.txt
 :license-image: https://img.shields.io/badge/license-MIT-green.svg
 
 image:{build-status-image}[Build status,link={build-status-uri}]
 image:{coverage-image}[Coverage,link={coverage-uri}]
+image:{luarocks-image}[LuaRocks,link={luarocks-uri}]
 image:{license-image}[MIT License,link={license-uri}]
 
 Lua implementation of the https://martinfowler.com/bliki/CircuitBreaker.html[Circuit Breaker] pattern.
