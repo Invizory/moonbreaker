@@ -1,5 +1,7 @@
-= image:moonbreaker.svg[moonbreaker,width=50%]
+= {moonbreaker-docs-uri}[image:moonbreaker.svg[moonbreaker,width=50%]]
 :imagesdir: docs/images
+:source-language: lua
+:moonbreaker-docs-uri: https://khashaev.ru/moonbreaker
 :build-status-uri: https://travis-ci.com/Invizory/moonbreaker
 :build-status-image: https://api.travis-ci.com/Invizory/moonbreaker.svg?branch=master
 :coverage-uri: https://codecov.io/gh/Invizory/moonbreaker
@@ -8,28 +10,29 @@
 :luarocks-image: https://img.shields.io/luarocks/v/Invizory/moonbreaker
 :license-uri: LICENSE.txt
 :license-image: https://img.shields.io/badge/license-MIT-green.svg
+:circuit-breaker-uri: https://martinfowler.com/bliki/CircuitBreaker.html
 
 image:{build-status-image}[Build status,link={build-status-uri}]
 image:{coverage-image}[Coverage,link={coverage-uri}]
 image:{luarocks-image}[LuaRocks,link={luarocks-uri}]
 image:{license-image}[MIT License,link={license-uri}]
 
-Lua implementation of the https://martinfowler.com/bliki/CircuitBreaker.html[Circuit Breaker] pattern.
+Lua implementation of the {circuit-breaker-uri}[Circuit Breaker] pattern.
 
 == Installation
 
-----------------------------
-luarocks install moonbreaker
-----------------------------
+    luarocks install moonbreaker
 
 == Usage
 
-[source,lua]
------------------------------------------
+----
 local moonbreaker = require "moonbreaker"
 
--- Create Circuit Breaker instance with default settings.
-local breaker = moonbreaker.new()
+-- Create Circuit Breaker instance with some settings.
+local breaker = moonbreaker {
+    limit = 10,
+    timeout = 60,
+}
 
 -- We have some error-prone service function...
 local function service(threshold)
@@ -44,10 +47,220 @@ service = breaker(service)
 
 -- Now we’re ready to call it!
 local ok, err = service(0.5)
------------------------------------------
+----
 
-See link:spec/moonbreaker_spec.lua[`spec/moonbreaker_spec.lua`] for details.
+See `link:spec/moonbreaker_spec.lua[spec/moonbreaker_spec.lua]` for details.
+
+== Interface
+
+----
+local moonbreaker = require "moonbreaker"
+----
+
+=== `moonbreaker(settings: xref:type-Settings[Settings]?): CircuitBreaker`
+
+Create a new Circuit Breaker instance.
+
+==== Example
+
+----
+local breaker = moonbreaker {
+    limit = 10,
+    timeout = 60,
+    success = moonbreaker.success.falsy_err,
+}
+----
+
+=== `CircuitBreaker(service: function): function`
+[#type-CircuitBreaker]
+
+Wraps `service` function with the Circuit Breaker.
+
+==== Example
+
+----
+service = breaker(service)
+----
+
+=== `CircuitBreaker:state(): xref:type-state[state]`
+
+Get the current state of the Circuit Breaker.
+
+==== Example
+
+----
+local state = breaker:state()
+if state == moonbreaker.states.closed then
+    print("All systems operational!")
+elseif state == moonbreaker.states.open then
+    print("Houston, we have a problem")
+elseif state == moonbreaker.states.half_open then
+    print("Trying to recover")
+end
+----
+
+[#settings]
+== Settings
+:lua-manual-uri: http://www.lua.org/manual/5.4/manual.html
+:lua-error-uri: {lua-manual-uri}#pdf-error
+:lua-debug-traceback-uri: {lua-manual-uri}#pdf-debug.traceback
+:lua-os-time-uri: {lua-manual-uri}#pdf-os.time
+
+[%header, cols="1,2,2"]
+|===
+| Setting
+| Type
+| Default
+
+| `xref:setting-limit[limit]`
+| `number`
+| `10`
+
+| `xref:setting-timeout[timeout]`
+| `number`
+| `60`
+
+| `xref:setting-interval[interval]`
+| `number`
+| `0`
+
+3+| *Transition Conditions*
+
+| `xref:setting-should_open[should_open]`
+| `(counters: xref:type-Counters[Counters]) -> boolean`
+| `xref:on[on].xref:on-consecutive_failures[consecutive_failures](limit)`
+
+| `xref:setting-should_close[should_close]`
+| `(counters: xref:type-Counters[Counters]) -> boolean`
+| `xref:on[on].xref:on-consecutive_successes[consecutive_successes](limit)`
+
+3+| *Interaction With Service Function*
+
+| `xref:setting-success[success]`
+| `(...) -> boolean`
+| `xref:success[success].xref:success-truthy[truthy]`
+
+| `xref:setting-error[error]`
+| `(error: xref:type-error[error]) -> ...`
+| `xref:error_reporting[error_reporting].xref:error_reporting-nil_err[nil_err]`
+
+| `xref:setting-error_handler[error_handler]`
+| `(error: any) -> ...`
+| `{lua-debug-traceback-uri}[debug.traceback]`
+
+| `xref:setting-rethrow[rethrow]`
+| `(error: any) -> ...`
+| `{lua-error-uri}[error]`
+
+3+| *Other*
+
+| `xref:setting-clock[clock]`
+| `() -> number`
+| `{lua-os-time-uri}[os.time]`
+
+| `xref:setting-notify[notify]`
+| `(state: xref:type-state[state]) -> any`
+| `function() end`
+|===
+
+=== Example
+
+----
+local breaker = moonbreaker {
+    limit = 5,
+    timeout = 60,
+    interval = 2 * 60,
+    should_open = moonbreaker.on.total_failures_rate {
+        rate = 0.7,
+        min_samples = 10,
+    },
+    success = moonbreaker.success.always,
+    report_error = moonbreaker.error_reporting.error,
+    notify = function (state)
+        print("next state: " .. state)
+    end,
+}
+----
+
+== Helpers
+
+[#on]
+=== `moonbreaker.on`
+
+[#on-consecutive_failures]
+* `consecutive_failures(limit: number)`
+[#on-consecutive_successes]
+* `consecutive_successes(limit: number)`
+[#on-total_failures]
+* `total_failures(limit: number)`
+[#on-total_failures-rate]
+* `total_failures_rate(params: {rate: number, min_samples: number})`
+
+[#success]
+=== `moonbreaker.success`
+
+[#success-truthy]
+* `truthy`
+[#success-falsy_err]
+* `falsy_err`
+[#success-always]
+* `always`
+
+[#error_reporting]
+=== `moonbreaker.error_reporting`
+
+[#error_reporting-nil_err]
+* `nil_err`
+[#error_reporting-false_err]
+* `false_err`
+[#error_reporting-error]
+* `error`
+
+== Types
+
+[#type-state]
+=== `state`
+
+----
+local states = moonbreaker.states
+----
+
+`state` is one of:
+
+* `states.closed`
+* `states.opened`
+* `states.half_open`
+
+[#type-error]
+=== `error`
+
+----
+local errors = moonbreaker.errors
+----
+
+`error` is one of:
+
+* `errors.open: string`
+* `errors.too_many_requests: string`
+
+[#type-Counters]
+=== `Counters`
+
+`Counters` is a table with the following properties:
+
+* `requests: number`
+* `total_successes: number`
+* `total_failures: number`
+* `consecutive_successes: number`
+* `consecutive_failures: number`
+
+[#type-Settings]
+=== `Settings`
+
+`Settings` is a table with the properties listed in the
+xref:settings[settings table].
 
 == Copyright
 
-Copyright © 2020 https://khashaev.ru[Arthur Khashaev]. See link:{license-uri}[license] for details.
+Copyright © 2020 https://khashaev.ru[Arthur Khashaev].
+See link:{license-uri}[license] for details.
